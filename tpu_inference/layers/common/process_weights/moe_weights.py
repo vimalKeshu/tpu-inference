@@ -533,7 +533,7 @@ def process_fp8_moe_weights(
         logger.info("[MoE requantization]: skipping — source and target dtype/block_size are identical")
         w13_interleave = activation == "swigluoai"
         w13_reorder_size = get_mesh_shape_product(mesh, ShardingAxisName.MLP_TENSOR)
-        return process_moe_weights(
+        processed = process_moe_weights(
             FusedMoEWeights(
                 w13_weight=w13_weight,
                 w13_weight_scale=w13_weight_scale,
@@ -546,6 +546,13 @@ def process_fp8_moe_weights(
             w13_reorder_size=w13_reorder_size,
             w13_interleave=w13_interleave,
         )
+        # Attach the original scales back — they'll be handled by
+        # shard_moe_weights and the kernel directly.
+        processed.w13_weight_scale = w13_weight_scale
+        processed.w2_weight_scale = w2_weight_scale
+
+        return processed    
+    
     # --- END EARLY EXIT ---
 
     moe_logging_str = (
