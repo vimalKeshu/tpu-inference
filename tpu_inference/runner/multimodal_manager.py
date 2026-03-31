@@ -19,7 +19,15 @@ import jax.numpy as jnp
 import numpy as np
 from vllm.model_executor.layers.rotary_embedding import MRotaryEmbedding
 from vllm.multimodal.inputs import MultiModalKwargsItem, PlaceholderRange
-from vllm.multimodal.utils import group_and_batch_mm_kwargs
+try:
+    from vllm.multimodal.utils import group_and_batch_mm_kwargs
+except ImportError:
+    # Fallback for vLLM versions without this function
+    def group_and_batch_mm_kwargs(mm_kwargs):
+        """Fallback implementation for older vLLM versions."""
+        # Simple implementation that yields each item individually
+        for item in mm_kwargs:
+            yield (item[0], 1, [item[1]])
 from vllm.v1.core.sched.output import SchedulerOutput as VllmSchedulerOutput
 
 from tpu_inference.models.jax.utils.multi_modal_utils import (
