@@ -312,5 +312,10 @@ class JaxMoE(JaxModule):
                     raise RuntimeError(
                         f"Failed to load weights for {param_name} with {weights.shape=} {param.value.shape=}"
                     ) from e
-
+                # free memory
+                for i in range(len(param._weights_to_load)):
+                    param._weights_to_load[i] = None
+                del weights
+        import gc
+        gc.collect()
         return loaded_names
