@@ -533,25 +533,41 @@ def process_fp8_moe_weights(
         logger.info("[MoE requantization]: skipping — source and target dtype/block_size are identical")
         w13_interleave = activation == "swigluoai"
         w13_reorder_size = get_mesh_shape_product(mesh, ShardingAxisName.MLP_TENSOR)
+
+        # Pass scales as None — process_moe_weights cannot handle
+        # block-quantized scale shapes in process_w13_for_gmm
         processed = process_moe_weights(
             FusedMoEWeights(
                 w13_weight=w13_weight,
-                w13_weight_scale=w13_weight_scale,
-                w13_bias=weights.w13_bias,
+                w13_weight_scale=None,
+                w13_bias=None,
                 w2_weight=w2_weight,
-                w2_weight_scale=w2_weight_scale,
-                w2_bias=weights.w2_bias,
+                w2_weight_scale=None,
+                w2_bias=None,
             ),
             moe_backend=moe_backend,
             w13_reorder_size=w13_reorder_size,
             w13_interleave=w13_interleave,
         )
-        # Attach the original scales back — they'll be handled by
-        # shard_moe_weights and the kernel directly.
+
+        # Re-attach original block-quantized scales after processing
+        # Apply the same swapaxes + expand_dims that process_moe_weights
+        # normally does for scales (lines ~260-267)
+        if w13_weight_scale is not None:
+            w13_weight_scale = w13_weight_scale.astype(jnp.float32)
+            w13_weight_scale = jnp.swapaxes(w13_weight_scale, 1, 2)
+            if w13_weight_scale.ndim == 3:
+                w13_weight_scale = jnp.expand_dims(w13_weight_scale, 2)
+        if w2_weight_scale is not None:
+            w2_weight_scale = w2_weight_scale.astype(jnp.float32)
+            w2_weight_scale = jnp.swapaxes(w2_weight_scale, 1, 2)
+            if w2_weight_scale.ndim == 3:
+                w2_weight_scale = jnp.expand_dims(w2_weight_scale, 2)
+
         processed.w13_weight_scale = w13_weight_scale
         processed.w2_weight_scale = w2_weight_scale
 
-        return processed    
+        return processed 
     
     # --- END EARLY EXIT ---
 
