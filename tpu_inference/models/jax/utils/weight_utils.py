@@ -758,7 +758,11 @@ def jax_array_from_reshaped_torch(
         torch_weight = torch_weight.permute(*permute_dims)
 
     with cpu_mesh_context():
-        return t2j(torch_weight, use_dlpack=False)
+        # return t2j(torch_weight, use_dlpack=False)
+        try:
+            return t2j(torch_weight, use_dlpack=True)
+        except Exception:
+            return t2j(torch_weight, use_dlpack=False)        
 
 
 def assign_and_shard_param(jax_param: nnx.Param,
@@ -784,7 +788,7 @@ def assign_and_shard_param(jax_param: nnx.Param,
         jax_param.value = shard_put(jax_weight, spec, mesh=param_mesh)
         jax_param.set_metadata("_is_loaded", True)
         del jax_weight
-        jax.clear_caches()
+        # jax.clear_caches()
     except Exception as e:
         raise RuntimeError(
             f"Failed to load weight '{param_name}' with shape {shape} into param with shape {jax_param.value.shape}"
