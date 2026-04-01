@@ -492,12 +492,12 @@ def shard_moe_weights(
     return weights
 
 
-@jax.jit(static_argnames=(
-    "moe_backend",
-    "mesh",
-    "activation",
-    "weight_block_size",
-))
+# @jax.jit(static_argnames=(
+#     "moe_backend",
+#     "mesh",
+#     "activation",
+#     "weight_block_size",
+# ))
 def process_fp8_moe_weights(
     weights: FusedMoEWeights,
     moe_backend: MoEBackend,
