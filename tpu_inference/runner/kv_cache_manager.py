@@ -398,17 +398,6 @@ class KVCacheManager:
                 # num_blocks must be a multiple of dp_size
                 num_blocks = (num_blocks // dp_size) * dp_size
 
-                # For MLA models, num_blocks must also be divisible by MLP_TENSOR sharding size
-                # because MLA uses PartitionSpec(MLP_TENSOR) for dim 0 of KV cache
-                if isinstance(layer_spec, MLAAttentionSpec):
-                    mlp_tensor_size = utils.get_mesh_shape_product(
-                        self.runner.mesh, ShardingAxisName.MLP_TENSOR
-                    )
-                    num_blocks = (num_blocks // mlp_tensor_size) * mlp_tensor_size
-                    logger.info(
-                        f"MLA: Adjusted num_blocks to {num_blocks} (divisible by MLP_TENSOR sharding size {mlp_tensor_size})"
-                    )
-
                 if isinstance(layer_spec, MambaSpec):
                     mamba_states = []
                     for state_index, (shape, dtype) in enumerate(
