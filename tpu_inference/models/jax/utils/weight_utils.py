@@ -482,7 +482,7 @@ def _load_hf_weights_on_thread(
         shardings = params
 
     for hf_key, hf_weight in model_weights_single_file_generator(
-            weights_file, framework="pt", filter_regex=filter_regex):
+            weights_file, framework="flax", filter_regex=filter_regex):
         _load_and_shard_weight(
             vllm_config,
             params,
