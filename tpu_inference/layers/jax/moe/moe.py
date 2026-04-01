@@ -307,16 +307,10 @@ class JaxMoE(JaxModule):
                     weights = jnp.concatenate(param._weights_to_load, axis=0)
                 try:
                     param.value = shard_put(weights, param.sharding)
-                    loaded_names.add(param_name)
-                    # --- CLEANUP ONLY ON SUCCESS ---
-                    for i in range(len(param._weights_to_load)):
-                        param._weights_to_load[i] = None
-                    del weights
-                    # --- END ---                    
+                    loaded_names.add(param_name)                
                 except Exception as e:
                     raise RuntimeError(
                         f"Failed to load weights for {param_name} with {weights.shape=} {param.value.shape=}"
                     ) from e
-        import gc
-        gc.collect()
+
         return loaded_names
